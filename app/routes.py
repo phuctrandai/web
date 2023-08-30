@@ -67,47 +67,14 @@ def notification():
             db.session.add(notification)
             db.session.commit()
 
-            ##################################################
-            ## TODO: Refactor This logic into an Azure Function
-            ## Code below will be replaced by a message queue
-            #################################################
-            # attendees = Attendee.query.all()
-
-            # for attendee in attendees:
-            #     subject = '{}: {}'.format(attendee.first_name, notification.subject)
-            #     send_email(attendee.email, subject, notification.message)
-
-            # notification.completed_date = datetime.utcnow()
-            # notification.status = 'Notified {} attendees'.format(len(attendees))
-            # db.session.commit()
-
             # TODO Call servicebus queue_client to enqueue notification ID
-            
             message = Message(str(notification.id))
-            with queue_client:
-                queue_client.send_messages(message)
-            queue_client.close()
-
-            #################################################
+            queue_client.send(message)
             ## END of TODO
-            #################################################
-
+            
             return redirect('/Notifications')
-        except :
-            logging.error('log unable to save notification')
+        except Exception as e:
+            logging.error(f'log unable to save notification: {str(e)}')
 
     else:
         return render_template('notification.html')
-
-
-
-# def send_email(email, subject, body):
-#     if not app.config.get('SENDGRID_API_KEY'):
-#         message = Mail(
-#             from_email=app.config.get('ADMIN_EMAIL_ADDRESS'),
-#             to_emails=email,
-#             subject=subject,
-#             plain_text_content=body)
-
-#         sg = SendGridAPIClient(app.config.get('SENDGRID_API_KEY'))
-#         sg.send(message)
